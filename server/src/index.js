@@ -165,10 +165,7 @@ function authMiddleware(store) {
     }
 
     const user = await store.getUserByOpenid(payload.openid)
-    if (!user) {
-      res.status(401).json({ message: '用户不存在' })
-      return
-    }
+      || await store.getOrCreateUser(payload.openid, '微信用户')
 
     req.currentUser = user
     next()

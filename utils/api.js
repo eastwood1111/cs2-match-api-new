@@ -10,6 +10,10 @@ function setToken(token) {
   wx.setStorageSync(TOKEN_KEY, token)
 }
 
+function clearToken() {
+  wx.removeStorageSync(TOKEN_KEY)
+}
+
 function request(options) {
   const method = options.method || 'GET'
   const path = options.path
@@ -70,6 +74,10 @@ function handleResponse(res, resolve, reject) {
     return
   }
 
+  if (statusCode === 401) {
+    clearToken()
+  }
+
   reject({
     statusCode,
     message: res.data && res.data.message ? res.data.message : '请求失败'
@@ -102,5 +110,6 @@ module.exports = {
   request,
   login,
   getToken,
-  setToken
+  setToken,
+  clearToken
 }
