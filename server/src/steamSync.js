@@ -51,6 +51,9 @@ async function syncSteamShareCodes(store, userId, account, options = {}) {
       if (error.rateLimited) {
         return finishSync(store, userId, shareCodes, knownCode, { rateLimited: true, hitBatchLimit: false })
       }
+      if (error.steamTimeout) {
+        return finishSync(store, userId, shareCodes, knownCode, { steamTimeout: true, hitBatchLimit: false })
+      }
       throw error
     }
 
@@ -83,6 +86,7 @@ async function finishSync(store, userId, shareCodes, knownCode, options = {}) {
     fetched: shareCodes.length,
     latestKnownCode: knownCode,
     rateLimited: Boolean(options.rateLimited),
+    steamTimeout: Boolean(options.steamTimeout),
     hitBatchLimit: Boolean(options.hitBatchLimit),
     message: buildSyncMessage(result.inserted, shareCodes.length, options)
   }
@@ -161,7 +165,7 @@ async function getNextMatchSharingCode({ steamId64, steamIdKey, knownCode, apiKe
     return typeof nextCode === 'string' ? nextCode.trim() : ''
   } catch (error) {
     if (error.name === 'AbortError') {
-      throw publicError('Steam 接口超时，请稍后重试')
+      throw publicError('Steam 接口超时，请稍后重试', 504, { steamTimeout: true })
     }
     throw error
   } finally {
@@ -238,6 +242,14 @@ function buildSyncMessage(inserted, fetched, options = {}) {
 
   if (options.rateLimited) {
     return 'Steam 暂时限流，几分钟后再同步；现有数据不会丢失'
+  }
+
+  if (options.steamTimeout && inserted > 0) {
+    return `已先保存 ${inserted} 场，Steam 接口超时，稍后可继续同步`
+  }
+
+  if (options.steamTimeout) {
+    return 'Steam 接口暂时超时，请稍后再同步；现有数据不会丢失'
   }
 
   if (options.hitBatchLimit && inserted > 0) {

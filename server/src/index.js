@@ -146,6 +146,7 @@ async function main() {
       inserted: result.inserted,
       fetched: result.fetched,
       rateLimited: Boolean(result.rateLimited),
+      steamTimeout: Boolean(result.steamTimeout),
       hitBatchLimit: Boolean(result.hitBatchLimit),
       source: 'steam',
       latestKnownCode: result.latestKnownCode,
@@ -155,7 +156,7 @@ async function main() {
 
   app.get('/api/matches', asyncHandler(async (req, res) => {
     const allItems = await store.listMatches(req.currentUser.id)
-    const items = config.demoMode ? allItems : allItems.filter((item) => item.source !== 'mock')
+    const items = (config.demoMode ? allItems : allItems.filter((item) => item.source !== 'mock')).slice(0, 100)
     res.json({
       items,
       summary: buildSummary(items)

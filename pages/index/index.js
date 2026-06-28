@@ -68,7 +68,7 @@ Page({
         api.request({ path: '/api/matches' })
       ])
 
-      const matches = (matchResult.items || []).map((item) => this.formatMatch(item))
+      const matches = (matchResult.items || []).slice(0, 100).map((item) => this.formatMatch(item))
       const summary = this.normalizeSummary(matchResult.summary, matches)
       if (!this._alive || requestId !== this._dashboardRequestId) {
         return
@@ -193,7 +193,7 @@ Page({
       })
       wx.showToast({
         title: result.message || '同步完成',
-        icon: result.rateLimited ? 'none' : 'success'
+        icon: result.rateLimited || result.steamTimeout ? 'none' : 'success'
       })
       await this.loadDashboard(false)
     } catch (error) {
