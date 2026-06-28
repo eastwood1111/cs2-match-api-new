@@ -188,7 +188,7 @@ Page({
         path: '/api/sync',
         method: 'POST',
         data: {
-          limit: 100
+          limit: 10
         }
       })
       wx.showToast({

@@ -1,5 +1,5 @@
 async function syncSteamShareCodes(store, userId, account, options = {}) {
-  const limit = Math.min(Math.max(Number(options.limit || 100), 1), 100)
+  const limit = Math.min(Math.max(Number(options.limit || 10), 1), 10)
   const steamId64 = account && account.steamId64
   const steamIdKey = account && account.matchAuthCode
   let knownCode = normalizeShareCode(account && account.knownCode)
@@ -49,7 +49,7 @@ async function syncSteamShareCodes(store, userId, account, options = {}) {
       })
     } catch (error) {
       if (error.rateLimited) {
-        return finishSync(store, userId, shareCodes, knownCode, true)
+        return finishSync(store, userId, shareCodes, knownCode, { rateLimited: true, hitBatchLimit: false })
       }
       throw error
     }
@@ -66,10 +66,13 @@ async function syncSteamShareCodes(store, userId, account, options = {}) {
     }
   }
 
-  return finishSync(store, userId, shareCodes, knownCode, false)
+  return finishSync(store, userId, shareCodes, knownCode, {
+    rateLimited: false,
+    hitBatchLimit: shareCodes.length >= limit
+  })
 }
 
-async function finishSync(store, userId, shareCodes, knownCode, rateLimited) {
+async function finishSync(store, userId, shareCodes, knownCode, options = {}) {
   const result = await store.insertSteamShareCodes(userId, shareCodes)
   if (shareCodes.length > 0) {
     await store.updateSteamKnownCode(userId, knownCode)
@@ -79,8 +82,9 @@ async function finishSync(store, userId, shareCodes, knownCode, rateLimited) {
     inserted: result.inserted,
     fetched: shareCodes.length,
     latestKnownCode: knownCode,
-    rateLimited,
-    message: buildSyncMessage(result.inserted, shareCodes.length, rateLimited)
+    rateLimited: Boolean(options.rateLimited),
+    hitBatchLimit: Boolean(options.hitBatchLimit),
+    message: buildSyncMessage(result.inserted, shareCodes.length, options)
   }
 }
 
@@ -227,13 +231,17 @@ function buildForbiddenMessage(keyStatus) {
   return 'Steam 拒绝访问：请检查 STEAM_WEB_API_KEY、steamidkey 和 knowncode 是否正确'
 }
 
-function buildSyncMessage(inserted, fetched, rateLimited) {
-  if (rateLimited && inserted > 0) {
+function buildSyncMessage(inserted, fetched, options = {}) {
+  if (options.rateLimited && inserted > 0) {
     return `已先保存 ${inserted} 场，Steam 暂时限流，几分钟后可继续同步剩余比赛`
   }
 
-  if (rateLimited) {
+  if (options.rateLimited) {
     return 'Steam 暂时限流，几分钟后再同步；现有数据不会丢失'
+  }
+
+  if (options.hitBatchLimit && inserted > 0) {
+    return `本次同步 ${inserted} 场，可继续点击同步，最多累计100场`
   }
 
   if (inserted > 0) {

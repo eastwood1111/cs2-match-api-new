@@ -15,7 +15,7 @@
       <view>
         <text class="section-title">我的比赛</text>
         <text class="down-mark">⌄</text>
-        <text class="sync-note">最多100场 · 基础数据</text>
+        <text class="sync-note">最多100场 · 分批同步</text>
       </view>
       <button class="sync-btn" loading="{{syncing}}" disabled="{{syncing}}" bindtap="syncMatches">{{syncing ? '同步中' : '同步'}}</button>
     </view>

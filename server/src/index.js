@@ -112,7 +112,7 @@ async function main() {
     let result
     try {
       result = await syncSteamShareCodes(store, req.currentUser.id, privateAccount, {
-        limit: req.body.limit || 100,
+        limit: req.body.limit || 10,
         apiKey: config.steam.apiKey
       })
     } catch (error) {
@@ -146,6 +146,7 @@ async function main() {
       inserted: result.inserted,
       fetched: result.fetched,
       rateLimited: Boolean(result.rateLimited),
+      hitBatchLimit: Boolean(result.hitBatchLimit),
       source: 'steam',
       latestKnownCode: result.latestKnownCode,
       message: result.message

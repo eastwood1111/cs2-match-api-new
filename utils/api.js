@@ -40,7 +40,9 @@ function request(options) {
         success(res) {
           handleResponse(res, resolve, reject)
         },
-        fail: reject
+        fail(error) {
+          reject(normalizeRequestError(error))
+        }
       }
 
       if (config.cloudEnv) {
@@ -62,7 +64,9 @@ function request(options) {
       success(res) {
         handleResponse(res, resolve, reject)
       },
-      fail: reject
+      fail(error) {
+        reject(normalizeRequestError(error))
+      }
     })
   })
 }
@@ -82,6 +86,23 @@ function handleResponse(res, resolve, reject) {
     statusCode,
     message: res.data && res.data.message ? res.data.message : '请求失败'
   })
+}
+
+function normalizeRequestError(error) {
+  const rawMessage = error && (error.message || error.errMsg) ? (error.message || error.errMsg) : '请求失败'
+  const code = error && (error.errCode || error.code)
+
+  if (code === 102002 || /102002/.test(rawMessage)) {
+    return {
+      ...error,
+      message: '云托管调用超时或服务临时异常，请稍后重试；同步会分批进行，已保存的数据不会丢失'
+    }
+  }
+
+  return {
+    ...error,
+    message: rawMessage
+  }
 }
 
 function login() {
