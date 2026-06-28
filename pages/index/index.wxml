@@ -15,6 +15,7 @@
       <view>
         <text class="section-title">我的比赛</text>
         <text class="down-mark">⌄</text>
+        <text class="sync-note">最多100场 · 基础数据</text>
       </view>
       <button class="sync-btn" loading="{{syncing}}" disabled="{{syncing}}" bindtap="syncMatches">{{syncing ? '同步中' : '同步'}}</button>
     </view>
@@ -60,8 +61,8 @@
         <text>赛果</text>
         <text>比分</text>
         <text>地图</text>
-        <text>Rating/KDA</text>
-        <text>Rank</text>
+        <text>KDA</text>
+        <text>ADR</text>
       </view>
 
       <view wx:for="{{matches}}" wx:key="id" class="table-row" bindtap="goMatch" data-id="{{item.id}}">
@@ -82,37 +83,23 @@
           <text class="mode-name">{{item.modeText}}</text>
         </view>
 
-        <view class="rating-cell">
-          <text class="rating {{item.ratingClass}}">{{item.ratingText}}</text>
+        <view class="kda-cell">
           <text class="kda">{{item.kdaText}}</text>
         </view>
 
-        <view class="rank-cell">
-          <text class="rank-chip">{{item.rankText}}</text>
-          <text class="rank-delta">{{item.rankDelta}}</text>
+        <view class="adr-cell">
+          <text class="adr">{{item.adrText}}</text>
         </view>
       </view>
     </view>
   </block>
 
   <view class="bottom-tabs">
-    <view class="tab-item">
-      <text class="tab-icon">⌖</text>
-      <text>发现</text>
-    </view>
-    <view class="tab-item">
-      <text class="tab-icon">♜</text>
-      <text>赛事</text>
-    </view>
-    <view class="tab-item">
-      <text class="tab-icon">□</text>
-      <text>社区</text>
-    </view>
     <view class="tab-item active-tab">
       <text class="tab-icon">◇</text>
       <text>数据</text>
     </view>
-    <view class="tab-item">
+    <view class="tab-item" bindtap="goBind">
       <text class="tab-icon">◉</text>
       <text>我的</text>
     </view>

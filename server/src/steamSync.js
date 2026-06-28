@@ -1,5 +1,5 @@
 async function syncSteamShareCodes(store, userId, account, options = {}) {
-  const limit = Math.min(Math.max(Number(options.limit || 10), 1), 50)
+  const limit = Math.min(Math.max(Number(options.limit || 100), 1), 100)
   const steamId64 = account && account.steamId64
   const steamIdKey = account && account.matchAuthCode
   let knownCode = normalizeShareCode(account && account.knownCode)

@@ -130,8 +130,6 @@ Page({
   formatMatch(match) {
     const isShareCodeOnly = match.source === 'steam' && match.parseStatus === 'sharecode'
     const scoreParts = splitScore(match.score)
-    const rating = Number(match.rating || 0)
-    const ratingText = isShareCodeOnly || !rating ? '--' : rating.toFixed(2)
 
     return {
       ...match,
@@ -144,11 +142,8 @@ Page({
       scoreClass: `score-${match.result || 'pending'}`,
       mapText: isShareCodeOnly ? '待解析' : match.mapName,
       modeText: isShareCodeOnly ? 'Steam 官匹' : match.mode,
-      ratingText,
-      ratingClass: rating >= 1 ? 'rating-good' : rating > 0 ? 'rating-low' : 'rating-empty',
-      kdaText: isShareCodeOnly ? '需解析' : `${match.kills}/${match.deaths}/${match.assists}`,
-      rankText: isShareCodeOnly ? '待解析' : '占位',
-      rankDelta: isShareCodeOnly ? '待 demo' : 'demo',
+      kdaText: isShareCodeOnly ? '--/--/--' : `${match.kills}/${match.deaths}/${match.assists}`,
+      adrText: isShareCodeOnly ? '--' : `${match.adr || 0}`,
       isMvp: !isShareCodeOnly && match.result === 'win' && Number(match.kills || 0) >= 18
     }
   },
@@ -191,7 +186,10 @@ Page({
     try {
       const result = await api.request({
         path: '/api/sync',
-        method: 'POST'
+        method: 'POST',
+        data: {
+          limit: 100
+        }
       })
       wx.showToast({
         title: result.message || '同步完成',
