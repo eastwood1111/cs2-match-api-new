@@ -147,6 +147,20 @@ cloudService: 'cs2-match-api-new'
 https://steamcommunity.com/dev/apikey
 ```
 
+如果同步返回 403，通常是两类问题：
+
+```text
+STEAM_WEB_API_KEY 无效
+```
+
+或：
+
+```text
+SteamID64、steamidkey、knowncode 三者不匹配
+```
+
+其中 `knowncode` 必须是这个 Steam 账号当前最新一场的 `CSGO-...` 比赛分享码。
+
 注意：这个阶段只拿到真实比赛分享码。每场 K/D、ADR、玩家列表、回合数据需要下一阶段解析 demo。
 
 下一阶段建议继续做：

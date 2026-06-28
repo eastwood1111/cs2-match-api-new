@@ -33,6 +33,8 @@ knowncode
 
 服务会调用 `ICSGOPlayers_730/GetNextMatchSharingCode`，同步真实比赛分享码。完整 K/D、ADR、玩家列表需要后续 demo 解析。
 
+如果 Steam 返回 403，先确认 `STEAM_WEB_API_KEY` 有效；如果 key 有效，通常是 `SteamID64`、`steamidkey`、`knowncode` 三者不匹配。
+
 ## 微信云托管
 
 云托管服务名建议使用：

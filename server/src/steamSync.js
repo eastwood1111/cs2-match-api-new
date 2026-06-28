@@ -113,6 +113,11 @@ async function getNextMatchSharingCode({ steamId64, steamIdKey, knownCode, apiKe
     }
 
     if (!response.ok) {
+      if (response.status === 403) {
+        const keyStatus = await validateSteamWebApiKey({ apiKey, steamId64 })
+        throw publicError(buildForbiddenMessage(keyStatus))
+      }
+
       throw publicError(extractSteamError(payload) || `Steam 接口请求失败：${response.status}`)
     }
 
@@ -142,6 +147,56 @@ function publicError(message, statusCode = 400) {
 
 function extractSteamError(payload) {
   return payload && (payload.message || payload.error || (payload.result && payload.result.message))
+}
+
+async function validateSteamWebApiKey({ apiKey, steamId64 }) {
+  if (!apiKey) {
+    return 'missing'
+  }
+
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 8000)
+
+  try {
+    const params = new URLSearchParams({
+      key: apiKey,
+      steamids: steamId64
+    })
+    const response = await fetch(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?${params}`, {
+      signal: controller.signal
+    })
+
+    if (!response.ok) {
+      return 'invalid'
+    }
+
+    const payload = await response.json()
+    const players = payload && payload.response && Array.isArray(payload.response.players)
+      ? payload.response.players
+      : []
+
+    return players.length > 0 ? 'valid' : 'unknown'
+  } catch (error) {
+    return 'unknown'
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+function buildForbiddenMessage(keyStatus) {
+  if (keyStatus === 'missing') {
+    return '服务缺少 Steam Web API Key，请配置 STEAM_WEB_API_KEY'
+  }
+
+  if (keyStatus === 'invalid') {
+    return 'Steam Web API Key 无效或未生效，请重新检查 STEAM_WEB_API_KEY'
+  }
+
+  if (keyStatus === 'valid') {
+    return 'Steam 拒绝比赛同步：SteamID64、比赛授权码 steamidkey、最近比赛分享码 knowncode 三者不匹配，请重新获取并保存'
+  }
+
+  return 'Steam 拒绝访问：请检查 STEAM_WEB_API_KEY、steamidkey 和 knowncode 是否正确'
 }
 
 function buildSyncMessage(inserted, fetched) {
