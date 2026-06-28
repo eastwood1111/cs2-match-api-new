@@ -51,7 +51,7 @@ Page({
     const field = event.currentTarget.dataset.field
     const value = event.detail.value
     const data = {
-      [field]: event.detail.value
+      [field]: field === 'knownCode' ? normalizeShareCode(value) : value
     }
 
     if ((field === 'premierUrl' || field === 'competitiveUrl') && !this.data.steamId64) {
@@ -66,7 +66,7 @@ Page({
 
   async save() {
     const steamId64 = this.data.steamId64.trim()
-    const knownCode = this.data.knownCode.trim()
+    const knownCode = normalizeShareCode(this.data.knownCode)
     if (!/^\d{17}$/.test(steamId64)) {
       this.safeSetData({ error: 'SteamID64 需要是 17 位数字' })
       return
@@ -135,4 +135,10 @@ Page({
 function extractSteamId64(value) {
   const match = String(value || '').match(/\/profiles\/(\d{17})(?:\/|$)/)
   return match ? match[1] : ''
+}
+
+function normalizeShareCode(value) {
+  const text = String(value || '').trim()
+  const match = text.match(/CSGO(-[A-Z0-9]+){5}/i)
+  return match ? match[0] : text
 }

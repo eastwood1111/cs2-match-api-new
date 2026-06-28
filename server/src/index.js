@@ -63,7 +63,7 @@ async function main() {
       steamId64: String(req.body.steamId64 || '').trim(),
       steamName: String(req.body.steamName || '').trim(),
       matchAuthCode: String(req.body.matchAuthCode || '').trim(),
-      knownCode: String(req.body.knownCode || '').trim(),
+      knownCode: normalizeShareCode(req.body.knownCode),
       premierUrl: String(req.body.premierUrl || '').trim(),
       competitiveUrl: String(req.body.competitiveUrl || '').trim()
     }
@@ -237,6 +237,12 @@ function asyncHandler(fn) {
 function extractSteamId64(value) {
   const match = String(value || '').match(/\/profiles\/(\d{17})(?:\/|$)/)
   return match ? match[1] : ''
+}
+
+function normalizeShareCode(value) {
+  const text = String(value || '').trim()
+  const match = text.match(/CSGO(-[A-Z0-9]+){5}/i)
+  return match ? match[0] : text
 }
 
 main().catch((error) => {

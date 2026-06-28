@@ -2,7 +2,7 @@ async function syncSteamShareCodes(store, userId, account, options = {}) {
   const limit = Math.min(Math.max(Number(options.limit || 10), 1), 50)
   const steamId64 = account && account.steamId64
   const steamIdKey = account && account.matchAuthCode
-  let knownCode = account && account.knownCode
+  let knownCode = normalizeShareCode(account && account.knownCode)
 
   if (!steamId64 || !steamIdKey || !knownCode) {
     const missingFields = getMissingCredentialFields({ steamId64, steamIdKey, knownCode })
@@ -79,6 +79,12 @@ function getMissingCredentialFields({ steamId64, steamIdKey, knownCode }) {
     fields.push('最近比赛分享码 knowncode')
   }
   return fields
+}
+
+function normalizeShareCode(value) {
+  const text = String(value || '').trim()
+  const match = text.match(/CSGO(-[A-Z0-9]+){5}/i)
+  return match ? match[0] : text
 }
 
 async function getNextMatchSharingCode({ steamId64, steamIdKey, knownCode, apiKey }) {
