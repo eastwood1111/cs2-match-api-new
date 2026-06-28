@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "CS2 官匹数据"
+  "navigationBarTitleText": "CS",
+  "navigationBarBackgroundColor": "#ffffff",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#f6f7f9"
 }

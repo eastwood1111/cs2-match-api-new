@@ -9,11 +9,19 @@ Page({
     matches: [],
     hasMatches: false,
     hasMockData: false,
+    dashboard: {
+      total: 0,
+      pendingTotal: 0,
+      parsedTotal: 0,
+      latestText: '--'
+    },
     summary: {
       total: 0,
-      winRate: '0%',
-      avgKd: '0.00',
-      avgAdr: '0'
+      parsedTotal: 0,
+      pendingTotal: 0,
+      winRate: '--',
+      avgKd: '--',
+      avgAdr: '--'
     }
   },
 
@@ -61,6 +69,7 @@ Page({
       ])
 
       const matches = (matchResult.items || []).map((item) => this.formatMatch(item))
+      const summary = this.normalizeSummary(matchResult.summary, matches)
       if (!this._alive || requestId !== this._dashboardRequestId) {
         return
       }
@@ -70,7 +79,8 @@ Page({
         matches,
         hasMatches: matches.length > 0,
         hasMockData: matches.some((item) => item.source === 'mock'),
-        summary: matchResult.summary || this.data.summary,
+        dashboard: this.buildDashboard(matches, summary),
+        summary,
         loading: false
       })
     } catch (error) {
@@ -85,25 +95,65 @@ Page({
     }
   },
 
-  formatMatch(match) {
-    const resultMap = {
-      win: '胜利',
-      loss: '失败',
-      draw: '平局',
-      pending: '待解析'
-    }
+  normalizeSummary(summary = {}, matches) {
+    const total = Number.isFinite(summary.total) ? summary.total : matches.length
+    const pendingTotal = Number.isFinite(summary.pendingTotal)
+      ? summary.pendingTotal
+      : matches.filter((item) => item.isShareCodeOnly || item.result === 'pending').length
+    const parsedTotal = Number.isFinite(summary.parsedTotal)
+      ? summary.parsedTotal
+      : Math.max(total - pendingTotal, 0)
 
     return {
-      ...match,
-      showSourceTag: match.source === 'mock',
-      showSteamTag: match.source === 'steam',
-      resultText: resultMap[match.result] || '未知',
-      resultClass: `result-${match.result || 'unknown'}`,
-      startedAtText: this.formatDate(match.startedAt)
+      total,
+      parsedTotal,
+      pendingTotal,
+      steamTotal: Number.isFinite(summary.steamTotal)
+        ? summary.steamTotal
+        : matches.filter((item) => item.source === 'steam').length,
+      latestSyncAt: summary.latestSyncAt || (matches[0] && matches[0].startedAt) || '',
+      winRate: summary.winRate || '--',
+      avgKd: summary.avgKd || '--',
+      avgAdr: summary.avgAdr || '--'
     }
   },
 
-  formatDate(value) {
+  buildDashboard(matches, summary) {
+    return {
+      total: summary.total || matches.length,
+      pendingTotal: summary.pendingTotal || 0,
+      parsedTotal: summary.parsedTotal || 0,
+      latestText: this.formatShortDate(summary.latestSyncAt)
+    }
+  },
+
+  formatMatch(match) {
+    const isShareCodeOnly = match.source === 'steam' && match.parseStatus === 'sharecode'
+    const scoreParts = splitScore(match.score)
+    const rating = Number(match.rating || 0)
+    const ratingText = isShareCodeOnly || !rating ? '--' : rating.toFixed(2)
+
+    return {
+      ...match,
+      isShareCodeOnly,
+      resultLabel: getResultLabel(match.result, isShareCodeOnly),
+      resultBadgeClass: `badge-${match.result || 'pending'}`,
+      resultDate: this.formatShortDate(match.startedAt),
+      scoreLeft: isShareCodeOnly ? '--' : scoreParts.left,
+      scoreRight: isShareCodeOnly ? '--' : scoreParts.right,
+      scoreClass: `score-${match.result || 'pending'}`,
+      mapText: isShareCodeOnly ? '待解析' : match.mapName,
+      modeText: isShareCodeOnly ? 'Steam 官匹' : match.mode,
+      ratingText,
+      ratingClass: rating >= 1 ? 'rating-good' : rating > 0 ? 'rating-low' : 'rating-empty',
+      kdaText: isShareCodeOnly ? '需解析' : `${match.kills}/${match.deaths}/${match.assists}`,
+      rankText: isShareCodeOnly ? '待解析' : '占位',
+      rankDelta: isShareCodeOnly ? '待 demo' : 'demo',
+      isMvp: !isShareCodeOnly && match.result === 'win' && Number(match.kills || 0) >= 18
+    }
+  },
+
+  formatShortDate(value) {
     if (!value) {
       return '--'
     }
@@ -115,9 +165,7 @@ Page({
 
     const month = `${date.getMonth() + 1}`.padStart(2, '0')
     const day = `${date.getDate()}`.padStart(2, '0')
-    const hour = `${date.getHours()}`.padStart(2, '0')
-    const minute = `${date.getMinutes()}`.padStart(2, '0')
-    return `${month}-${day} ${hour}:${minute}`
+    return `${month}-${day}`
   },
 
   goBind() {
@@ -165,3 +213,28 @@ Page({
     }
   }
 })
+
+function splitScore(value) {
+  const text = String(value || '--').trim()
+  const match = text.match(/^(\d+)\s*[-:]\s*(\d+)$/)
+  if (!match) {
+    return { left: '--', right: '--' }
+  }
+  return { left: match[1], right: match[2] }
+}
+
+function getResultLabel(result, isShareCodeOnly) {
+  if (isShareCodeOnly || result === 'pending') {
+    return '待'
+  }
+  if (result === 'win') {
+    return '胜'
+  }
+  if (result === 'loss') {
+    return '负'
+  }
+  if (result === 'draw') {
+    return '平'
+  }
+  return '待'
+}

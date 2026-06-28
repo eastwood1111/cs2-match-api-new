@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "比赛详情"
+  "navigationBarTitleText": "比赛详情",
+  "navigationBarBackgroundColor": "#101112",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#f4f5f7"
 }

@@ -4,53 +4,111 @@
   <view wx:elif="{{error}}" class="notice">{{error}}</view>
 
   <block wx:elif="{{match}}">
-    <view class="match-head">
-      <view>
-        <text class="map-name">{{match.mapName}}</text>
-        <view class="match-meta">{{match.mode}} · {{match.startedAtText}}</view>
-        <view wx:if="{{match.isShareCodeOnly}}" class="share-code">{{match.shareCode}}</view>
+    <view class="hero {{match.resultHeroClass}}">
+      <view class="hero-nav">
+        <button class="hero-icon" bindtap="goBack">‹</button>
+        <view class="brand-pill">
+          <text class="brand-mark">CS</text>
+          <text>Steam 官方匹配</text>
+        </view>
+        <button class="hero-icon" bindtap="copyShareCode">↗</button>
       </view>
-      <view class="score">{{match.score}}</view>
+
+      <view class="hero-scoreboard">
+        <text class="hero-result">{{match.resultText}}</text>
+        <view class="big-score">
+          <text>{{match.scoreLeft}}</text>
+          <text class="score-slash">/</text>
+          <text>{{match.scoreRight}}</text>
+        </view>
+        <text class="round-line">{{match.roundLine}}</text>
+      </view>
+
+      <view class="hero-meta-grid">
+        <view wx:for="{{match.heroMeta}}" wx:key="label" class="hero-meta-item">
+          <text class="hero-meta-label">{{item.label}}</text>
+          <text class="hero-meta-value">{{item.value}}</text>
+        </view>
+      </view>
     </view>
 
-    <view wx:if="{{match.isShareCodeOnly}}" class="notice pending-notice">已同步真实 Steam 比赛分享码，详细战绩需要下一步接入 demo 解析。</view>
+    <view class="tabs-row">
+      <view wx:for="{{match.tabs}}" wx:key="label" class="tab {{item.active ? 'active-tab' : ''}}">
+        <text>{{item.label}}</text>
+      </view>
+      <button class="demo-btn" bindtap="showDemoHint">▶ DEMO回放</button>
+    </view>
 
-    <view wx:if="{{!match.isShareCodeOnly}}" class="metrics">
-      <view class="metric">
-        <text class="metric-value">{{match.kills}}</text>
-        <text class="metric-label">K</text>
+    <view class="team-ribbon">
+      <text>TEAM-A</text>
+      <text class="team-result">{{match.teamResultText}}</text>
+    </view>
+
+    <view class="player-summary">
+      <view class="player-main">
+        <view class="avatar">{{match.currentPlayer.avatarText}}</view>
+        <view class="player-name-wrap">
+          <text class="mvp-badge">MVP</text>
+          <text class="player-name">{{match.currentPlayer.name}}</text>
+          <text class="rank-bar">{{match.currentPlayer.rankText}}</text>
+        </view>
       </view>
-      <view class="metric">
-        <text class="metric-value">{{match.deaths}}</text>
-        <text class="metric-label">D</text>
-      </view>
-      <view class="metric">
-        <text class="metric-value">{{match.assists}}</text>
-        <text class="metric-label">A</text>
-      </view>
-      <view class="metric">
-        <text class="metric-value">{{match.adr}}</text>
-        <text class="metric-label">ADR</text>
+      <view class="player-numbers">
+        <view>
+          <text class="number-label">K-D</text>
+          <text class="number-value">{{match.currentPlayer.kda}}</text>
+        </view>
+        <view>
+          <text class="number-label">ADR</text>
+          <text class="number-value">{{match.currentPlayer.adr}}</text>
+        </view>
+        <view>
+          <text class="number-label">RWS</text>
+          <text class="number-value">{{match.currentPlayer.rws}}</text>
+        </view>
+        <view>
+          <text class="number-label">Rating</text>
+          <text class="number-value rating-value">{{match.currentPlayer.rating}}</text>
+        </view>
       </view>
     </view>
 
-    <view wx:if="{{!match.isShareCodeOnly}}" class="section-title">玩家数据</view>
-
-    <view wx:if="{{!match.isShareCodeOnly}}" class="scoreboard">
-      <view class="score-row header-row">
-        <text class="player">玩家</text>
-        <text>K</text>
-        <text>D</text>
-        <text>A</text>
-        <text>ADR</text>
+    <view class="stat-grid">
+      <view wx:for="{{match.statBlocks}}" wx:key="label" class="stat-card">
+        <text class="stat-value">{{item.value}}</text>
+        <text class="stat-label">{{item.label}}</text>
       </view>
-      <view wx:for="{{match.players}}" wx:key="steamId64" class="score-row {{item.isCurrentUser ? 'current-row' : ''}}">
-        <text class="player">{{item.name}}</text>
-        <text>{{item.kills}}</text>
-        <text>{{item.deaths}}</text>
-        <text>{{item.assists}}</text>
+    </view>
+
+    <view class="players-table">
+      <view wx:for="{{match.playerRows}}" wx:key="name" class="player-row {{item.isCurrentUser ? 'current-player' : ''}}">
+        <view class="small-avatar">{{item.avatarText}}</view>
+        <view class="row-name-wrap">
+          <text class="row-name">{{item.name}}</text>
+          <text class="rank-bar mini-rank">{{item.rankText}}</text>
+        </view>
+        <text>{{item.kda}}</text>
         <text>{{item.adr}}</text>
+        <text>{{item.rws}}</text>
+        <text class="rating-value">{{item.rating}}</text>
       </view>
+    </view>
+
+    <view class="round-board">
+      <view class="round-header">
+        <text class="round-title">回合</text>
+        <view wx:for="{{match.roundHeader}}" wx:key="id" class="round-cell">{{item.label}}</view>
+      </view>
+      <view wx:for="{{match.roundRows}}" wx:for-item="row" wx:key="team" class="round-row">
+        <text class="round-team">{{row.team}}</text>
+        <view wx:for="{{row.cells}}" wx:for-item="cell" wx:key="id" class="round-cell {{cell.className}}">{{cell.text}}</view>
+      </view>
+    </view>
+
+    <view wx:if="{{match.isShareCodeOnly}}" class="share-panel">
+      <text class="share-label">分享码</text>
+      <text class="share-value">{{match.shareCodeText}}</text>
+      <button class="copy-btn" bindtap="copyShareCode">复制</button>
     </view>
   </block>
 </view>
