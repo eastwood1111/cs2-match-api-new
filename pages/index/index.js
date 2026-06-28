@@ -193,7 +193,7 @@ Page({
       })
       wx.showToast({
         title: result.message || '同步完成',
-        icon: 'success'
+        icon: result.rateLimited ? 'none' : 'success'
       })
       await this.loadDashboard(false)
     } catch (error) {

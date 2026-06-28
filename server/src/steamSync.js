@@ -39,12 +39,20 @@ async function syncSteamShareCodes(store, userId, account, options = {}) {
 
   const shareCodes = []
   for (let index = 0; index < limit; index += 1) {
-    const nextCode = await getNextMatchSharingCode({
-      steamId64,
-      steamIdKey,
-      knownCode,
-      apiKey: options.apiKey
-    })
+    let nextCode
+    try {
+      nextCode = await getNextMatchSharingCode({
+        steamId64,
+        steamIdKey,
+        knownCode,
+        apiKey: options.apiKey
+      })
+    } catch (error) {
+      if (error.rateLimited) {
+        return finishSync(store, userId, shareCodes, knownCode, true)
+      }
+      throw error
+    }
 
     if (!nextCode || nextCode === knownCode || shareCodes.includes(nextCode)) {
       break
@@ -52,8 +60,16 @@ async function syncSteamShareCodes(store, userId, account, options = {}) {
 
     shareCodes.push(nextCode)
     knownCode = nextCode
+
+    if (index < limit - 1) {
+      await delay(Number(options.delayMs || 250))
+    }
   }
 
+  return finishSync(store, userId, shareCodes, knownCode, false)
+}
+
+async function finishSync(store, userId, shareCodes, knownCode, rateLimited) {
   const result = await store.insertSteamShareCodes(userId, shareCodes)
   if (shareCodes.length > 0) {
     await store.updateSteamKnownCode(userId, knownCode)
@@ -63,7 +79,8 @@ async function syncSteamShareCodes(store, userId, account, options = {}) {
     inserted: result.inserted,
     fetched: shareCodes.length,
     latestKnownCode: knownCode,
-    message: buildSyncMessage(result.inserted, shareCodes.length)
+    rateLimited,
+    message: buildSyncMessage(result.inserted, shareCodes.length, rateLimited)
   }
 }
 
@@ -108,6 +125,10 @@ async function getNextMatchSharingCode({ steamId64, steamIdKey, knownCode, apiKe
     const text = await response.text()
     let payload = {}
 
+    if (response.status === 429) {
+      throw publicError('Steam 请求过快触发限流，请等待几分钟后继续同步', 429, { rateLimited: true })
+    }
+
     try {
       payload = text ? JSON.parse(text) : {}
     } catch (error) {
@@ -144,10 +165,11 @@ async function getNextMatchSharingCode({ steamId64, steamIdKey, knownCode, apiKe
   }
 }
 
-function publicError(message, statusCode = 400) {
+function publicError(message, statusCode = 400, meta = {}) {
   const error = new Error(message)
   error.publicMessage = message
   error.statusCode = statusCode
+  Object.assign(error, meta)
   return error
 }
 
@@ -205,7 +227,15 @@ function buildForbiddenMessage(keyStatus) {
   return 'Steam 拒绝访问：请检查 STEAM_WEB_API_KEY、steamidkey 和 knowncode 是否正确'
 }
 
-function buildSyncMessage(inserted, fetched) {
+function buildSyncMessage(inserted, fetched, rateLimited) {
+  if (rateLimited && inserted > 0) {
+    return `已先保存 ${inserted} 场，Steam 暂时限流，几分钟后可继续同步剩余比赛`
+  }
+
+  if (rateLimited) {
+    return 'Steam 暂时限流，几分钟后再同步；现有数据不会丢失'
+  }
+
   if (inserted > 0) {
     return `已同步 ${inserted} 场真实比赛分享码`
   }
@@ -215,6 +245,10 @@ function buildSyncMessage(inserted, fetched) {
   }
 
   return 'Steam 暂无下一场比赛分享码'
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 module.exports = {

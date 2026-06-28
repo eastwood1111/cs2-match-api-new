@@ -145,6 +145,7 @@ async function main() {
     res.json({
       inserted: result.inserted,
       fetched: result.fetched,
+      rateLimited: Boolean(result.rateLimited),
       source: 'steam',
       latestKnownCode: result.latestKnownCode,
       message: result.message
