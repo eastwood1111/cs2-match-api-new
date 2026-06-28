@@ -74,6 +74,12 @@ MYSQL_DATABASE=cs2_match
 SESSION_SECRET=一串长随机字符串
 ```
 
+云托管生产环境默认不生成测试比赛。如果要临时演示 mock 数据，再额外设置：
+
+```text
+ENABLE_MOCK_SYNC=true
+```
+
 如果云托管模板自动生成的是下面这组变量，也可以直接使用，代码已经兼容：
 
 ```text

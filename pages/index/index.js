@@ -8,6 +8,7 @@ Page({
     steamAccount: null,
     matches: [],
     hasMatches: false,
+    hasMockData: false,
     summary: {
       total: 0,
       winRate: '0%',
@@ -17,22 +18,30 @@ Page({
   },
 
   onLoad() {
+    this._alive = true
+    this._bootstrapped = false
+    this._dashboardRequestId = 0
     this.bootstrap()
   },
 
   onShow() {
-    if (api.getToken()) {
+    if (this._bootstrapped && api.getToken()) {
       this.loadDashboard(false)
     }
   },
 
+  onUnload() {
+    this._alive = false
+  },
+
   async bootstrap() {
-    this.setData({ loading: true, error: '' })
+    this.safeSetData({ loading: true, error: '' })
     try {
       await api.login()
+      this._bootstrapped = true
       await this.loadDashboard(false)
     } catch (error) {
-      this.setData({
+      this.safeSetData({
         error: error.message || '后端暂时不可用',
         loading: false
       })
@@ -40,8 +49,9 @@ Page({
   },
 
   async loadDashboard(showLoading = true) {
+    const requestId = ++this._dashboardRequestId
     if (showLoading) {
-      this.setData({ loading: true, error: '' })
+      this.safeSetData({ loading: true, error: '' })
     }
 
     try {
@@ -51,16 +61,24 @@ Page({
       ])
 
       const matches = (matchResult.items || []).map((item) => this.formatMatch(item))
+      if (!this._alive || requestId !== this._dashboardRequestId) {
+        return
+      }
 
-      this.setData({
+      this.safeSetData({
         steamAccount: accountResult.account,
         matches,
         hasMatches: matches.length > 0,
+        hasMockData: matches.some((item) => item.source === 'mock'),
         summary: matchResult.summary || this.data.summary,
         loading: false
       })
     } catch (error) {
-      this.setData({
+      if (!this._alive || requestId !== this._dashboardRequestId) {
+        return
+      }
+
+      this.safeSetData({
         error: error.message || '数据加载失败',
         loading: false
       })
@@ -76,6 +94,7 @@ Page({
 
     return {
       ...match,
+      showSourceTag: match.source === 'mock',
       resultText: resultMap[match.result] || '未知',
       resultClass: `result-${match.result || 'unknown'}`,
       startedAtText: this.formatDate(match.startedAt)
@@ -118,7 +137,7 @@ Page({
       return
     }
 
-    this.setData({ syncing: true, error: '' })
+    this.safeSetData({ syncing: true, error: '' })
     try {
       const result = await api.request({
         path: '/api/sync',
@@ -130,11 +149,17 @@ Page({
       })
       await this.loadDashboard(false)
     } catch (error) {
-      this.setData({
+      this.safeSetData({
         error: error.message || '同步失败'
       })
     } finally {
-      this.setData({ syncing: false })
+      this.safeSetData({ syncing: false })
+    }
+  },
+
+  safeSetData(data) {
+    if (this._alive) {
+      this.setData(data)
     }
   }
 })

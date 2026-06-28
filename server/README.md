@@ -19,6 +19,8 @@ curl http://127.0.0.1:3000/health
 
 如果微信云托管模板提供的是 `MYSQL_ADDRESS=host:port` 和 `MYSQL_USERNAME`，也可以直接使用。服务启动时会自动创建 `MYSQL_DATABASE` 指定的库，默认是 `cs2_match`，并初始化业务表。手动 SQL 脚本在 `sql/schema.sql`。
 
+生产环境默认关闭测试比赛生成。需要演示 mock 数据时设置 `ENABLE_MOCK_SYNC=true`。
+
 ## 微信云托管
 
 云托管服务名建议使用：

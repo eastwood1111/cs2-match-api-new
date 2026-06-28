@@ -8,6 +8,7 @@
   </view>
 
   <view wx:if="{{error}}" class="notice">{{error}}</view>
+  <view wx:if="{{hasMockData}}" class="notice warning-notice">当前显示的是测试数据，尚未接入 Steam 官方比赛同步。</view>
 
   <view wx:if="{{loading}}" class="loading-panel">加载中</view>
 
@@ -56,6 +57,7 @@
         <view>
           <text class="map-name">{{item.mapName}}</text>
           <view class="match-meta">{{item.mode}} · {{item.startedAtText}}</view>
+          <view wx:if="{{item.showSourceTag}}" class="source-label">测试数据</view>
         </view>
         <view class="score">{{item.score}}</view>
       </view>

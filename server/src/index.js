@@ -21,6 +21,7 @@ async function main() {
     res.json({
       ok: true,
       storage: store.kind,
+      demoMode: config.demoMode,
       now: new Date().toISOString()
     })
   })
@@ -71,15 +72,24 @@ async function main() {
       return
     }
 
+    if (!config.demoMode) {
+      res.status(501).json({
+        message: '真实 Steam 同步尚未接入，当前已关闭测试数据'
+      })
+      return
+    }
+
     const result = await store.ensureMockMatches(req.currentUser.id)
     res.json({
       inserted: result.inserted,
-      message: result.inserted > 0 ? '已生成测试比赛' : '暂无新比赛'
+      source: 'mock',
+      message: result.inserted > 0 ? '已生成测试数据' : '暂无新的测试数据'
     })
   }))
 
   app.get('/api/matches', asyncHandler(async (req, res) => {
-    const items = await store.listMatches(req.currentUser.id)
+    const allItems = await store.listMatches(req.currentUser.id)
+    const items = config.demoMode ? allItems : allItems.filter((item) => item.source !== 'mock')
     res.json({
       items,
       summary: buildSummary(items)
@@ -89,6 +99,11 @@ async function main() {
   app.get('/api/matches/:id', asyncHandler(async (req, res) => {
     const match = await store.getMatch(req.currentUser.id, req.params.id)
     if (!match) {
+      res.status(404).json({ message: '比赛不存在' })
+      return
+    }
+
+    if (!config.demoMode && match.source === 'mock') {
       res.status(404).json({ message: '比赛不存在' })
       return
     }

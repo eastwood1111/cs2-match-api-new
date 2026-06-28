@@ -27,6 +27,7 @@ module.exports = {
   port: Number(process.env.PORT || 3000),
   sessionSecret: process.env.SESSION_SECRET || 'dev-session-secret',
   trustProxy: bool(process.env.TRUST_PROXY),
+  demoMode: bool(process.env.ENABLE_MOCK_SYNC) || process.env.NODE_ENV !== 'production',
   dataFile: path.resolve(rootDir, process.env.DATA_FILE || './data/dev-db.json'),
   db: {
     dialect: process.env.DB_DIALECT || (mysqlHost ? 'mysql' : 'json'),
