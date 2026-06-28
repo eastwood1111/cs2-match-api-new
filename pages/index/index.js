@@ -38,6 +38,21 @@ Page({
     }
   },
 
+  async onPullDownRefresh() {
+    try {
+      if (!api.getToken()) {
+        await api.login()
+      }
+      await this.loadDashboard(false)
+    } catch (error) {
+      this.safeSetData({
+        error: error.message || '刷新失败'
+      })
+    } finally {
+      wx.stopPullDownRefresh()
+    }
+  },
+
   onUnload() {
     this._alive = false
   },

@@ -1,17 +1,32 @@
 const config = require('./config')
 
 const TOKEN_KEY = 'cs2_api_token'
+const TOKEN_SAVED_AT_KEY = 'cs2_api_token_saved_at'
+const TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
 function getToken() {
-  return wx.getStorageSync(TOKEN_KEY)
+  const token = wx.getStorageSync(TOKEN_KEY)
+  const savedAt = Number(wx.getStorageSync(TOKEN_SAVED_AT_KEY) || 0)
+  if (!token) {
+    return ''
+  }
+
+  if (!savedAt || Date.now() - savedAt > TOKEN_TTL_MS) {
+    clearToken()
+    return ''
+  }
+
+  return token
 }
 
 function setToken(token) {
   wx.setStorageSync(TOKEN_KEY, token)
+  wx.setStorageSync(TOKEN_SAVED_AT_KEY, Date.now())
 }
 
 function clearToken() {
   wx.removeStorageSync(TOKEN_KEY)
+  wx.removeStorageSync(TOKEN_SAVED_AT_KEY)
 }
 
 function request(options) {
@@ -106,6 +121,14 @@ function normalizeRequestError(error) {
 }
 
 function login() {
+  const cachedToken = getToken()
+  if (cachedToken) {
+    return Promise.resolve({
+      token: cachedToken,
+      cached: true
+    })
+  }
+
   return new Promise((resolve, reject) => {
     wx.login({
       success(res) {
