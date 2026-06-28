@@ -8,6 +8,11 @@ Page({
     knownCode: '',
     premierUrl: '',
     competitiveUrl: '',
+    credentialStatus: {
+      hasSteamId64: false,
+      hasMatchAuthCode: false,
+      hasKnownCode: false
+    },
     saving: false,
     error: ''
   },
@@ -31,7 +36,8 @@ Page({
           steamName: account.steamName || '',
           knownCode: account.knownCode || '',
           premierUrl: account.premierUrl || '',
-          competitiveUrl: account.competitiveUrl || ''
+          competitiveUrl: account.competitiveUrl || '',
+          credentialStatus: result.credentialStatus || this.data.credentialStatus
         })
       }
     } catch (error) {
@@ -60,8 +66,14 @@ Page({
 
   async save() {
     const steamId64 = this.data.steamId64.trim()
+    const knownCode = this.data.knownCode.trim()
     if (!/^\d{17}$/.test(steamId64)) {
       this.safeSetData({ error: 'SteamID64 需要是 17 位数字' })
+      return
+    }
+
+    if (knownCode && !/^CSGO(-[A-Z0-9]+){5}$/i.test(knownCode)) {
+      this.safeSetData({ error: '最近比赛分享码需要是 CSGO-xxxxx-xxxxx-xxxxx-xxxxx-xxxxx 格式，不是 Steam 网页链接' })
       return
     }
 
@@ -74,7 +86,7 @@ Page({
           steamId64,
           steamName: this.data.steamName.trim(),
           matchAuthCode: this.data.matchAuthCode.trim(),
-          knownCode: this.data.knownCode.trim(),
+          knownCode,
           premierUrl: this.data.premierUrl.trim(),
           competitiveUrl: this.data.competitiveUrl.trim()
         }
@@ -83,6 +95,14 @@ Page({
       wx.showToast({
         title: '已保存',
         icon: 'success'
+      })
+
+      this.safeSetData({
+        credentialStatus: {
+          hasSteamId64: Boolean(steamId64),
+          hasMatchAuthCode: Boolean(this.data.matchAuthCode.trim()) || this.data.credentialStatus.hasMatchAuthCode,
+          hasKnownCode: Boolean(knownCode)
+        }
       })
 
       setTimeout(() => {

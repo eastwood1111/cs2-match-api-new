@@ -46,7 +46,16 @@ async function main() {
 
   app.get('/api/steam/account', asyncHandler(async (req, res) => {
     const account = await store.getSteamAccount(req.currentUser.id)
-    res.json({ account })
+    const privateAccount = await store.getPrivateSteamAccount(req.currentUser.id)
+    res.json({
+      account,
+      syncReady: Boolean(privateAccount && privateAccount.steamId64 && privateAccount.matchAuthCode && privateAccount.knownCode),
+      credentialStatus: {
+        hasSteamId64: Boolean(privateAccount && privateAccount.steamId64),
+        hasMatchAuthCode: Boolean(privateAccount && privateAccount.matchAuthCode),
+        hasKnownCode: Boolean(privateAccount && privateAccount.knownCode)
+      }
+    })
   }))
 
   app.post('/api/steam/bind', asyncHandler(async (req, res) => {
@@ -106,7 +115,10 @@ async function main() {
     })
 
     if (result.needsCredentials) {
-      res.status(400).json({ message: result.message })
+      res.status(400).json({
+        message: result.message,
+        missingFields: result.missingFields
+      })
       return
     }
 

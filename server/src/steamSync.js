@@ -5,12 +5,14 @@ async function syncSteamShareCodes(store, userId, account, options = {}) {
   let knownCode = account && account.knownCode
 
   if (!steamId64 || !steamIdKey || !knownCode) {
+    const missingFields = getMissingCredentialFields({ steamId64, steamIdKey, knownCode })
     return {
       needsCredentials: true,
+      missingFields,
       inserted: 0,
       fetched: 0,
       latestKnownCode: knownCode || '',
-      message: '真实同步需要 SteamID64、比赛授权码和最近比赛分享码'
+      message: `真实同步缺少：${missingFields.join('、')}`
     }
   }
 
@@ -42,6 +44,20 @@ async function syncSteamShareCodes(store, userId, account, options = {}) {
     latestKnownCode: knownCode,
     message: buildSyncMessage(result.inserted, shareCodes.length)
   }
+}
+
+function getMissingCredentialFields({ steamId64, steamIdKey, knownCode }) {
+  const fields = []
+  if (!steamId64) {
+    fields.push('SteamID64')
+  }
+  if (!steamIdKey) {
+    fields.push('比赛授权码 steamidkey')
+  }
+  if (!knownCode) {
+    fields.push('最近比赛分享码 knowncode')
+  }
+  return fields
 }
 
 async function getNextMatchSharingCode({ steamId64, steamIdKey, knownCode, apiKey }) {

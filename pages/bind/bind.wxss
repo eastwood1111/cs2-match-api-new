@@ -45,6 +45,11 @@
   font-size: 22rpx;
 }
 
+.ok-hint {
+  color: #16895d;
+  font-weight: 800;
+}
+
 .notice {
   margin-top: 22rpx;
   padding: 20rpx 22rpx;
