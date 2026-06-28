@@ -25,10 +25,7 @@ function request(options) {
 
   if (config.apiMode === 'cloud') {
     return new Promise((resolve, reject) => {
-      wx.cloud.callContainer({
-        config: {
-          env: config.cloudEnv
-        },
+      const callOptions = {
         path,
         method,
         data,
@@ -40,7 +37,15 @@ function request(options) {
           handleResponse(res, resolve, reject)
         },
         fail: reject
-      })
+      }
+
+      if (config.cloudEnv) {
+        callOptions.config = {
+          env: config.cloudEnv
+        }
+      }
+
+      wx.cloud.callContainer(callOptions)
     })
   }
 
