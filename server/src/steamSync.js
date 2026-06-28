@@ -16,6 +16,16 @@ async function syncSteamShareCodes(store, userId, account, options = {}) {
     }
   }
 
+  if (!options.apiKey) {
+    return {
+      serverConfigError: true,
+      inserted: 0,
+      fetched: 0,
+      latestKnownCode: knownCode || '',
+      message: '服务缺少 Steam Web API Key，请在云托管环境变量 STEAM_WEB_API_KEY 中配置'
+    }
+  }
+
   if (!/^CSGO(-[A-Z0-9]+){5}$/i.test(knownCode)) {
     return {
       needsCredentials: true,
@@ -95,6 +105,10 @@ async function getNextMatchSharingCode({ steamId64, steamIdKey, knownCode, apiKe
     try {
       payload = text ? JSON.parse(text) : {}
     } catch (error) {
+      if (/verify your key|access is denied|forbidden/i.test(text)) {
+        throw publicError('Steam 拒绝访问，请检查云托管环境变量 STEAM_WEB_API_KEY 是否已配置且有效')
+      }
+
       throw publicError(`Steam 返回了非 JSON 响应，通常是参数错误或 Steam 暂时拒绝请求：${text.slice(0, 120)}`)
     }
 

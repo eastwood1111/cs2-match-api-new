@@ -71,6 +71,7 @@ MYSQL_PORT=3306
 MYSQL_USER=你的数据库用户
 MYSQL_PASSWORD=你的数据库密码
 MYSQL_DATABASE=cs2_match
+STEAM_WEB_API_KEY=你的 Steam Web API Key
 SESSION_SECRET=一串长随机字符串
 ```
 
@@ -88,6 +89,7 @@ MYSQL_ADDRESS=数据库地址:3306
 MYSQL_USERNAME=数据库用户
 MYSQL_PASSWORD=数据库密码
 MYSQL_DATABASE=cs2_match
+STEAM_WEB_API_KEY=你的 Steam Web API Key
 SESSION_SECRET=一串长随机字符串
 ```
 
@@ -138,6 +140,12 @@ cloudService: 'cs2-match-api-new'
 2. 填写比赛授权码 `steamidkey`。
 3. 填写当前最新比赛分享码 `knowncode`，格式通常是 `CSGO-...`。
 4. 首页点击同步后，服务会调用 Steam `ICSGOPlayers_730/GetNextMatchSharingCode`，把真实比赛分享码写入数据库。
+
+云托管必须配置 `STEAM_WEB_API_KEY`。Steam Web API Key 在这里申请：
+
+```text
+https://steamcommunity.com/dev/apikey
+```
 
 注意：这个阶段只拿到真实比赛分享码。每场 K/D、ADR、玩家列表、回合数据需要下一阶段解析 demo。
 

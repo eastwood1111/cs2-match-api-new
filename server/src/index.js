@@ -135,6 +135,13 @@ async function main() {
       return
     }
 
+    if (result.serverConfigError) {
+      res.status(500).json({
+        message: result.message
+      })
+      return
+    }
+
     res.json({
       inserted: result.inserted,
       fetched: result.fetched,

@@ -29,6 +29,8 @@ steamidkey
 knowncode
 ```
 
+服务还需要云托管环境变量 `STEAM_WEB_API_KEY`。Steam Web API Key 在 `https://steamcommunity.com/dev/apikey` 申请。
+
 服务会调用 `ICSGOPlayers_730/GetNextMatchSharingCode`，同步真实比赛分享码。完整 K/D、ADR、玩家列表需要后续 demo 解析。
 
 ## 微信云托管
