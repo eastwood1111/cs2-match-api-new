@@ -1,5 +1,5 @@
 {
-  "name": "cs2-match-api",
+  "name": "cs2-match-api-new",
   "version": "0.1.0",
   "private": true,
   "description": "CS2 match data API for WeChat Mini Program and WeChat Cloud Run.",

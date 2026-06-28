@@ -1,4 +1,4 @@
-# CS2 官匹数据微信小程序
+# cs2-match-api-new
 
 当前是最小可跑通版本：
 
@@ -49,7 +49,7 @@ apiMode: 'local'
 云托管服务名建议：
 
 ```text
-cs2-match-api
+cs2-match-api-new
 ```
 
 如果使用一键部署或模板构建，云托管通常会在代码仓库根目录寻找 `Dockerfile`。本项目根目录已经放置了 `Dockerfile`，它会只打包 `server` 后端代码。
@@ -121,7 +121,7 @@ server/sql/schema.sql
 ```js
 apiMode: 'cloud',
 cloudEnv: '你的云开发环境 ID',
-cloudService: 'cs2-match-api'
+cloudService: 'cs2-match-api-new'
 ```
 
 ## 下一步

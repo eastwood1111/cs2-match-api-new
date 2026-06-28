@@ -24,7 +24,7 @@ curl http://127.0.0.1:3000/health
 云托管服务名建议使用：
 
 ```text
-cs2-match-api
+cs2-match-api-new
 ```
 
 小程序的 `utils/config.js` 中对应：
@@ -32,7 +32,7 @@ cs2-match-api
 ```js
 apiMode: 'cloud',
 cloudEnv: '你的云开发环境 ID',
-cloudService: 'cs2-match-api'
+cloudService: 'cs2-match-api-new'
 ```
 
 容器会监听 `PORT` 环境变量，镜像入口为 `node src/index.js`。
