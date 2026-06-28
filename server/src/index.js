@@ -5,6 +5,7 @@ const { signToken, verifyToken, getBearerToken } = require('./auth')
 const { createStore } = require('./store')
 const { buildSummary } = require('./summary')
 const { syncSteamShareCodes } = require('./steamSync')
+const { syncSteamHistoryPages } = require('./steamHistoryPage')
 
 async function main() {
   const store = createStore(config)
@@ -80,14 +81,25 @@ async function main() {
   }))
 
   app.post('/api/steam/import-gcpd', asyncHandler(async (req, res) => {
-    const account = await store.getSteamAccount(req.currentUser.id)
+    const account = await store.getPrivateSteamAccount(req.currentUser.id)
     if (!account) {
       res.status(400).json({ message: '请先绑定 Steam 数据页' })
       return
     }
 
-    res.status(501).json({
-      message: 'Steam 个人游戏数据页需要登录 Steam 后才能查看，云托管无法匿名抓取。请后续改用比赛授权码/分享码同步，或提供导出的页面数据。'
+    const result = await syncSteamHistoryPages(store, req.currentUser.id, account)
+    if (result.unavailable) {
+      res.status(400).json({
+        message: result.message
+      })
+      return
+    }
+
+    res.json({
+      inserted: result.inserted,
+      fetched: result.fetched,
+      source: 'steam-web',
+      message: result.message || 'Steam 网页没有新的基础数据'
     })
   }))
 
@@ -109,6 +121,17 @@ async function main() {
     }
 
     const privateAccount = await store.getPrivateSteamAccount(req.currentUser.id)
+    const webResult = await syncSteamHistoryPages(store, req.currentUser.id, privateAccount)
+    if (webResult.inserted > 0) {
+      res.json({
+        inserted: webResult.inserted,
+        fetched: webResult.fetched,
+        source: 'steam-web',
+        message: webResult.message
+      })
+      return
+    }
+
     let result
     try {
       result = await syncSteamShareCodes(store, req.currentUser.id, privateAccount, {
@@ -150,7 +173,7 @@ async function main() {
       hitBatchLimit: Boolean(result.hitBatchLimit),
       source: 'steam',
       latestKnownCode: result.latestKnownCode,
-      message: result.message
+      message: webResult.unavailable ? `${result.message}；${webResult.message}` : result.message
     })
   }))
 

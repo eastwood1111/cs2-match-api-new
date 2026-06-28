@@ -30,6 +30,20 @@ function clearToken() {
 }
 
 function request(options) {
+  return requestOnce(options).catch((error) => {
+    if (error.statusCode === 401 && options.path !== '/api/login' && !options._retriedAfterLogin) {
+      clearToken()
+      return login({ force: true }).then(() => requestOnce({
+        ...options,
+        _retriedAfterLogin: true
+      }))
+    }
+
+    throw error
+  })
+}
+
+function requestOnce(options) {
   const method = options.method || 'GET'
   const path = options.path
   const data = options.data || {}
@@ -120,8 +134,8 @@ function normalizeRequestError(error) {
   }
 }
 
-function login() {
-  const cachedToken = getToken()
+function login(options = {}) {
+  const cachedToken = options.force ? '' : getToken()
   if (cachedToken) {
     return Promise.resolve({
       token: cachedToken,
@@ -132,7 +146,7 @@ function login() {
   return new Promise((resolve, reject) => {
     wx.login({
       success(res) {
-        request({
+        requestOnce({
           path: '/api/login',
           method: 'POST',
           data: {
@@ -145,7 +159,9 @@ function login() {
           resolve(data)
         }).catch(reject)
       },
-      fail: reject
+      fail(error) {
+        reject(normalizeRequestError(error))
+      }
     })
   })
 }

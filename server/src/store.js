@@ -164,6 +164,39 @@ class JsonStore {
     return { inserted }
   }
 
+  async insertParsedSteamMatches(userId, matches) {
+    let inserted = 0
+    for (const match of matches) {
+      const exists = this.data.matches.some((item) => item.userId === userId && item.shareCode === match.shareCode)
+      if (exists) {
+        continue
+      }
+
+      const matchId = this.nextId('matches')
+      this.data.matches.push({
+        id: matchId,
+        userId,
+        ...parsedSteamMatch(match)
+      })
+      this.data.matchPlayers.push({
+        id: this.nextId('matchPlayers'),
+        matchId,
+        steamId64: '',
+        name: '我的数据',
+        team: 'A',
+        kills: match.kills || 0,
+        deaths: match.deaths || 0,
+        assists: match.assists || 0,
+        adr: match.adr || 0,
+        isCurrentUser: true
+      })
+      inserted += 1
+    }
+
+    await this.save()
+    return { inserted }
+  }
+
   async updateSteamKnownCode(userId, knownCode) {
     const account = this.data.steamAccounts.find((item) => item.userId === userId)
     if (!account) {
@@ -408,6 +441,72 @@ class MySqlStore {
     return { inserted }
   }
 
+  async insertParsedSteamMatches(userId, matches) {
+    if (matches.length === 0) {
+      return { inserted: 0 }
+    }
+
+    let inserted = 0
+    const connection = await this.pool.getConnection()
+    try {
+      await connection.beginTransaction()
+      for (const match of matches) {
+        const item = parsedSteamMatch(match)
+        const [result] = await connection.execute(
+          `INSERT IGNORE INTO matches
+            (user_id, share_code, map_name, mode, started_at, score, result, duration_seconds,
+             kills, deaths, assists, adr, rating, parse_status, source)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            userId,
+            item.shareCode,
+            item.mapName,
+            item.mode,
+            toMysqlDate(item.startedAt),
+            item.score,
+            item.result,
+            item.durationSeconds,
+            item.kills,
+            item.deaths,
+            item.assists,
+            item.adr,
+            item.rating,
+            item.parseStatus,
+            item.source
+          ]
+        )
+
+        if (result.affectedRows > 0) {
+          inserted += 1
+          await connection.execute(
+            `INSERT INTO match_players
+              (match_id, steam_id64, name, team, kills, deaths, assists, adr, is_current_user)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              result.insertId,
+              '',
+              '我的数据',
+              'A',
+              item.kills,
+              item.deaths,
+              item.assists,
+              item.adr,
+              1
+            ]
+          )
+        }
+      }
+      await connection.commit()
+    } catch (error) {
+      await connection.rollback()
+      throw error
+    } finally {
+      connection.release()
+    }
+
+    return { inserted }
+  }
+
   async updateSteamKnownCode(userId, knownCode) {
     await this.pool.execute(
       'UPDATE steam_accounts SET known_code = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?',
@@ -505,6 +604,25 @@ function createSteamShareCodeMatch(id, userId, shareCode) {
     rating: 0,
     parseStatus: 'sharecode',
     source: 'steam'
+  }
+}
+
+function parsedSteamMatch(match) {
+  return {
+    shareCode: match.shareCode,
+    mapName: match.mapName || 'Steam 网页',
+    mode: match.mode || 'Steam',
+    startedAt: match.startedAt || new Date().toISOString(),
+    score: match.score || '--',
+    result: match.result || 'pending',
+    durationSeconds: Number(match.durationSeconds || 0),
+    kills: Number(match.kills || 0),
+    deaths: Number(match.deaths || 0),
+    assists: Number(match.assists || 0),
+    adr: Number(match.adr || 0),
+    rating: Number(match.rating || 0),
+    parseStatus: match.parseStatus || 'basic',
+    source: match.source || 'steam-web'
   }
 }
 
