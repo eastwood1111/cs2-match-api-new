@@ -34,6 +34,10 @@
   font-size: 30rpx;
 }
 
+.url-input {
+  font-size: 24rpx;
+}
+
 .notice {
   margin-top: 22rpx;
   padding: 20rpx 22rpx;

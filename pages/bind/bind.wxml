@@ -6,6 +6,16 @@
     </view>
 
     <view class="field">
+      <text class="field-label">Premier 比赛页</text>
+      <input class="input url-input" value="{{premierUrl}}" data-field="premierUrl" bindinput="onInput" placeholder="https://steamcommunity.com/profiles/.../gcpd/730/?tab=matchhistorypremier" />
+    </view>
+
+    <view class="field">
+      <text class="field-label">竞技地图比赛页</text>
+      <input class="input url-input" value="{{competitiveUrl}}" data-field="competitiveUrl" bindinput="onInput" placeholder="https://steamcommunity.com/profiles/.../gcpd/730/?tab=matchhistorycompetitivepermap" />
+    </view>
+
+    <view class="field">
       <text class="field-label">Steam 昵称</text>
       <input class="input" value="{{steamName}}" data-field="steamName" bindinput="onInput" placeholder="可选" />
     </view>

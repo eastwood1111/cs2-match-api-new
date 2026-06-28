@@ -53,8 +53,12 @@ async function main() {
       steamId64: String(req.body.steamId64 || '').trim(),
       steamName: String(req.body.steamName || '').trim(),
       matchAuthCode: String(req.body.matchAuthCode || '').trim(),
-      knownCode: String(req.body.knownCode || '').trim()
+      knownCode: String(req.body.knownCode || '').trim(),
+      premierUrl: String(req.body.premierUrl || '').trim(),
+      competitiveUrl: String(req.body.competitiveUrl || '').trim()
     }
+
+    payload.steamId64 = payload.steamId64 || extractSteamId64(payload.premierUrl) || extractSteamId64(payload.competitiveUrl)
 
     if (!/^\d{17}$/.test(payload.steamId64)) {
       res.status(400).json({ message: 'SteamID64 需要是 17 位数字' })
@@ -63,6 +67,18 @@ async function main() {
 
     const account = await store.upsertSteamAccount(req.currentUser.id, payload)
     res.json({ account })
+  }))
+
+  app.post('/api/steam/import-gcpd', asyncHandler(async (req, res) => {
+    const account = await store.getSteamAccount(req.currentUser.id)
+    if (!account) {
+      res.status(400).json({ message: '请先绑定 Steam 数据页' })
+      return
+    }
+
+    res.status(501).json({
+      message: 'Steam 个人游戏数据页需要登录 Steam 后才能查看，云托管无法匿名抓取。请后续改用比赛授权码/分享码同步，或提供导出的页面数据。'
+    })
   }))
 
   app.post('/api/sync', asyncHandler(async (req, res) => {
@@ -171,6 +187,11 @@ function asyncHandler(fn) {
   return (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next)
   }
+}
+
+function extractSteamId64(value) {
+  const match = String(value || '').match(/\/profiles\/(\d{17})(?:\/|$)/)
+  return match ? match[1] : ''
 }
 
 main().catch((error) => {

@@ -6,6 +6,8 @@ Page({
     steamName: '',
     matchAuthCode: '',
     knownCode: '',
+    premierUrl: '',
+    competitiveUrl: '',
     saving: false,
     error: ''
   },
@@ -27,7 +29,9 @@ Page({
         this.safeSetData({
           steamId64: account.steamId64 || '',
           steamName: account.steamName || '',
-          knownCode: account.knownCode || ''
+          knownCode: account.knownCode || '',
+          premierUrl: account.premierUrl || '',
+          competitiveUrl: account.competitiveUrl || ''
         })
       }
     } catch (error) {
@@ -39,9 +43,19 @@ Page({
 
   onInput(event) {
     const field = event.currentTarget.dataset.field
-    this.setData({
+    const value = event.detail.value
+    const data = {
       [field]: event.detail.value
-    })
+    }
+
+    if ((field === 'premierUrl' || field === 'competitiveUrl') && !this.data.steamId64) {
+      const steamId64 = extractSteamId64(value)
+      if (steamId64) {
+        data.steamId64 = steamId64
+      }
+    }
+
+    this.setData(data)
   },
 
   async save() {
@@ -60,7 +74,9 @@ Page({
           steamId64,
           steamName: this.data.steamName.trim(),
           matchAuthCode: this.data.matchAuthCode.trim(),
-          knownCode: this.data.knownCode.trim()
+          knownCode: this.data.knownCode.trim(),
+          premierUrl: this.data.premierUrl.trim(),
+          competitiveUrl: this.data.competitiveUrl.trim()
         }
       })
 
@@ -95,3 +111,8 @@ Page({
     }
   }
 })
+
+function extractSteamId64(value) {
+  const match = String(value || '').match(/\/profiles\/(\d{17})(?:\/|$)/)
+  return match ? match[1] : ''
+}

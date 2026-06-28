@@ -83,6 +83,8 @@ class JsonStore {
     account.steamId64 = payload.steamId64
     account.steamName = payload.steamName || ''
     account.knownCode = payload.knownCode || ''
+    account.premierUrl = payload.premierUrl || ''
+    account.competitiveUrl = payload.competitiveUrl || ''
     if (payload.matchAuthCode) {
       account.matchAuthCode = payload.matchAuthCode
     }
@@ -186,6 +188,8 @@ class MySqlStore {
     for (const statement of schemaStatements) {
       await this.pool.execute(statement)
     }
+
+    await ensureMysqlMigrations(this.pool)
   }
 
   async getUserByOpenid(openid) {
@@ -213,20 +217,24 @@ class MySqlStore {
   async upsertSteamAccount(userId, payload) {
     await this.pool.execute(
       `INSERT INTO steam_accounts
-        (user_id, steam_id64, steam_name, match_auth_code, known_code)
-       VALUES (?, ?, ?, ?, ?)
+        (user_id, steam_id64, steam_name, match_auth_code, known_code, premier_url, competitive_url)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE
         steam_id64 = VALUES(steam_id64),
         steam_name = VALUES(steam_name),
         match_auth_code = IF(VALUES(match_auth_code) = '', match_auth_code, VALUES(match_auth_code)),
         known_code = VALUES(known_code),
+        premier_url = VALUES(premier_url),
+        competitive_url = VALUES(competitive_url),
         updated_at = CURRENT_TIMESTAMP`,
       [
         userId,
         payload.steamId64,
         payload.steamName || '',
         payload.matchAuthCode || '',
-        payload.knownCode || ''
+        payload.knownCode || '',
+        payload.premierUrl || '',
+        payload.competitiveUrl || ''
       ]
     )
     return this.getSteamAccount(userId)
@@ -235,7 +243,8 @@ class MySqlStore {
   async getSteamAccount(userId) {
     const [rows] = await this.pool.execute(
       `SELECT id, user_id AS userId, steam_id64 AS steamId64, steam_name AS steamName,
-        known_code AS knownCode, created_at AS createdAt, updated_at AS updatedAt
+        known_code AS knownCode, premier_url AS premierUrl, competitive_url AS competitiveUrl,
+        created_at AS createdAt, updated_at AS updatedAt
        FROM steam_accounts
        WHERE user_id = ?`,
       [userId]
@@ -246,7 +255,8 @@ class MySqlStore {
   async getPrivateSteamAccount(userId) {
     const [rows] = await this.pool.execute(
       `SELECT id, user_id AS userId, steam_id64 AS steamId64, steam_name AS steamName,
-        match_auth_code AS matchAuthCode, known_code AS knownCode
+        match_auth_code AS matchAuthCode, known_code AS knownCode,
+        premier_url AS premierUrl, competitive_url AS competitiveUrl
        FROM steam_accounts
        WHERE user_id = ?`,
       [userId]
@@ -377,6 +387,8 @@ function publicSteamAccount(account) {
     steamId64: account.steamId64,
     steamName: account.steamName,
     knownCode: account.knownCode,
+    premierUrl: account.premierUrl,
+    competitiveUrl: account.competitiveUrl,
     createdAt: account.createdAt,
     updatedAt: account.updatedAt
   }
@@ -427,6 +439,21 @@ function escapeIdentifier(value) {
   return `\`${identifier}\``
 }
 
+async function ensureMysqlMigrations(pool) {
+  await addColumnIfMissing(pool, 'steam_accounts', 'premier_url', "VARCHAR(512) NOT NULL DEFAULT ''")
+  await addColumnIfMissing(pool, 'steam_accounts', 'competitive_url', "VARCHAR(512) NOT NULL DEFAULT ''")
+}
+
+async function addColumnIfMissing(pool, table, column, definition) {
+  try {
+    await pool.execute(`ALTER TABLE \`${table}\` ADD COLUMN \`${column}\` ${definition}`)
+  } catch (error) {
+    if (error.code !== 'ER_DUP_FIELDNAME') {
+      throw error
+    }
+  }
+}
+
 const schemaStatements = [
   `CREATE TABLE IF NOT EXISTS users (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -441,6 +468,8 @@ const schemaStatements = [
     steam_name VARCHAR(128) NOT NULL DEFAULT '',
     match_auth_code VARCHAR(255) NOT NULL DEFAULT '',
     known_code VARCHAR(255) NOT NULL DEFAULT '',
+    premier_url VARCHAR(512) NOT NULL DEFAULT '',
+    competitive_url VARCHAR(512) NOT NULL DEFAULT '',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_steam_accounts_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
