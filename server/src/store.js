@@ -148,6 +148,34 @@ class JsonStore {
     return { inserted: matches.length }
   }
 
+  async insertSteamShareCodes(userId, shareCodes) {
+    let inserted = 0
+    for (const shareCode of shareCodes) {
+      const exists = this.data.matches.some((match) => match.userId === userId && match.shareCode === shareCode)
+      if (exists) {
+        continue
+      }
+
+      this.data.matches.push(createSteamShareCodeMatch(this.nextId('matches'), userId, shareCode))
+      inserted += 1
+    }
+
+    await this.save()
+    return { inserted }
+  }
+
+  async updateSteamKnownCode(userId, knownCode) {
+    const account = this.data.steamAccounts.find((item) => item.userId === userId)
+    if (!account) {
+      return null
+    }
+
+    account.knownCode = knownCode
+    account.updatedAt = new Date().toISOString()
+    await this.save()
+    return publicSteamAccount(account)
+  }
+
   async listMatches(userId) {
     return this.data.matches
       .filter((match) => match.userId === userId)
@@ -334,6 +362,60 @@ class MySqlStore {
     return { inserted: matches.length }
   }
 
+  async insertSteamShareCodes(userId, shareCodes) {
+    if (shareCodes.length === 0) {
+      return { inserted: 0 }
+    }
+
+    let inserted = 0
+    const connection = await this.pool.getConnection()
+    try {
+      await connection.beginTransaction()
+      for (const shareCode of shareCodes) {
+        const [result] = await connection.execute(
+          `INSERT IGNORE INTO matches
+            (user_id, share_code, map_name, mode, started_at, score, result, duration_seconds,
+             kills, deaths, assists, adr, rating, parse_status, source)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            userId,
+            shareCode,
+            '待解析',
+            'Steam',
+            toMysqlDate(new Date().toISOString()),
+            '--',
+            'pending',
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            'sharecode',
+            'steam'
+          ]
+        )
+        inserted += result.affectedRows
+      }
+      await connection.commit()
+    } catch (error) {
+      await connection.rollback()
+      throw error
+    } finally {
+      connection.release()
+    }
+
+    return { inserted }
+  }
+
+  async updateSteamKnownCode(userId, knownCode) {
+    await this.pool.execute(
+      'UPDATE steam_accounts SET known_code = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?',
+      [knownCode, userId]
+    )
+    return this.getSteamAccount(userId)
+  }
+
   async listMatches(userId) {
     const [rows] = await this.pool.execute(
       `SELECT id, share_code AS shareCode, map_name AS mapName, mode, started_at AS startedAt,
@@ -403,6 +485,27 @@ function mapDates(row) {
 
 function toMysqlDate(value) {
   return new Date(value).toISOString().slice(0, 19).replace('T', ' ')
+}
+
+function createSteamShareCodeMatch(id, userId, shareCode) {
+  return {
+    id,
+    userId,
+    shareCode,
+    mapName: '待解析',
+    mode: 'Steam',
+    startedAt: new Date().toISOString(),
+    score: '--',
+    result: 'pending',
+    durationSeconds: 0,
+    kills: 0,
+    deaths: 0,
+    assists: 0,
+    adr: 0,
+    rating: 0,
+    parseStatus: 'sharecode',
+    source: 'steam'
+  }
 }
 
 async function ensureMysqlDatabase(config) {

@@ -58,6 +58,7 @@
           <text class="map-name">{{item.mapName}}</text>
           <view class="match-meta">{{item.mode}} · {{item.startedAtText}}</view>
           <view wx:if="{{item.showSourceTag}}" class="source-label">测试数据</view>
+          <view wx:if="{{item.showSteamTag}}" class="source-label steam-source-label">真实分享码，待解析</view>
         </view>
         <view class="score">{{item.score}}</view>
       </view>

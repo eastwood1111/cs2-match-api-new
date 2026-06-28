@@ -28,6 +28,9 @@ module.exports = {
   sessionSecret: process.env.SESSION_SECRET || 'dev-session-secret',
   trustProxy: bool(process.env.TRUST_PROXY),
   demoMode: bool(process.env.ENABLE_MOCK_SYNC) || process.env.NODE_ENV !== 'production',
+  steam: {
+    apiKey: process.env.STEAM_WEB_API_KEY || ''
+  },
   dataFile: path.resolve(rootDir, process.env.DATA_FILE || './data/dev-db.json'),
   db: {
     dialect: process.env.DB_DIALECT || (mysqlHost ? 'mysql' : 'json'),

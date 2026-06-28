@@ -4,6 +4,7 @@ const config = require('./config')
 const { signToken, verifyToken, getBearerToken } = require('./auth')
 const { createStore } = require('./store')
 const { buildSummary } = require('./summary')
+const { syncSteamShareCodes } = require('./steamSync')
 
 async function main() {
   const store = createStore(config)
@@ -88,18 +89,33 @@ async function main() {
       return
     }
 
-    if (!config.demoMode) {
-      res.status(501).json({
-        message: '真实 Steam 同步尚未接入，当前已关闭测试数据'
+    if (config.demoMode) {
+      const result = await store.ensureMockMatches(req.currentUser.id)
+      res.json({
+        inserted: result.inserted,
+        source: 'mock',
+        message: result.inserted > 0 ? '已生成测试数据' : '暂无新的测试数据'
       })
       return
     }
 
-    const result = await store.ensureMockMatches(req.currentUser.id)
+    const privateAccount = await store.getPrivateSteamAccount(req.currentUser.id)
+    const result = await syncSteamShareCodes(store, req.currentUser.id, privateAccount, {
+      limit: req.body.limit || 10,
+      apiKey: config.steam.apiKey
+    })
+
+    if (result.needsCredentials) {
+      res.status(400).json({ message: result.message })
+      return
+    }
+
     res.json({
       inserted: result.inserted,
-      source: 'mock',
-      message: result.inserted > 0 ? '已生成测试数据' : '暂无新的测试数据'
+      fetched: result.fetched,
+      source: 'steam',
+      latestKnownCode: result.latestKnownCode,
+      message: result.message
     })
   }))
 

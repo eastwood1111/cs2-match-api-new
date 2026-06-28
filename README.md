@@ -132,9 +132,17 @@ cloudService: 'cs2-match-api-new'
 
 ## 下一步
 
-下一阶段建议接入真实 Steam 同步：
+当前已经接入真实 Steam 分享码同步：
 
-1. 保存用户提供的 `steamidkey` 和最近 `knowncode`。
-2. 新增 SteamAdapter，拉取下一场 match sharing code。
-3. 新增队列 Worker 下载并解析 demo。
-4. 把 kill、damage、round 数据落到独立表。
+1. 绑定页填写 SteamID64。
+2. 填写比赛授权码 `steamidkey`。
+3. 填写当前最新比赛分享码 `knowncode`，格式通常是 `CSGO-...`。
+4. 首页点击同步后，服务会调用 Steam `ICSGOPlayers_730/GetNextMatchSharingCode`，把真实比赛分享码写入数据库。
+
+注意：这个阶段只拿到真实比赛分享码。每场 K/D、ADR、玩家列表、回合数据需要下一阶段解析 demo。
+
+下一阶段建议继续做：
+
+1. 根据分享码定位并下载 demo。
+2. 接入 CS2 demo parser。
+3. 把 kill、damage、round 数据落到独立表。

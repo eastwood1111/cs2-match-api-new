@@ -37,6 +37,7 @@ Page({
 
     return {
       ...match,
+      isShareCodeOnly: match.source === 'steam' && match.parseStatus === 'sharecode',
       startedAtText: this.formatDate(match.startedAt)
     }
   },

@@ -8,11 +8,14 @@
       <view>
         <text class="map-name">{{match.mapName}}</text>
         <view class="match-meta">{{match.mode}} · {{match.startedAtText}}</view>
+        <view wx:if="{{match.isShareCodeOnly}}" class="share-code">{{match.shareCode}}</view>
       </view>
       <view class="score">{{match.score}}</view>
     </view>
 
-    <view class="metrics">
+    <view wx:if="{{match.isShareCodeOnly}}" class="notice pending-notice">已同步真实 Steam 比赛分享码，详细战绩需要下一步接入 demo 解析。</view>
+
+    <view wx:if="{{!match.isShareCodeOnly}}" class="metrics">
       <view class="metric">
         <text class="metric-value">{{match.kills}}</text>
         <text class="metric-label">K</text>
@@ -31,9 +34,9 @@
       </view>
     </view>
 
-    <view class="section-title">玩家数据</view>
+    <view wx:if="{{!match.isShareCodeOnly}}" class="section-title">玩家数据</view>
 
-    <view class="scoreboard">
+    <view wx:if="{{!match.isShareCodeOnly}}" class="scoreboard">
       <view class="score-row header-row">
         <text class="player">玩家</text>
         <text>K</text>

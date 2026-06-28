@@ -89,12 +89,14 @@ Page({
     const resultMap = {
       win: '胜利',
       loss: '失败',
-      draw: '平局'
+      draw: '平局',
+      pending: '待解析'
     }
 
     return {
       ...match,
       showSourceTag: match.source === 'mock',
+      showSteamTag: match.source === 'steam',
       resultText: resultMap[match.result] || '未知',
       resultClass: `result-${match.result || 'unknown'}`,
       startedAtText: this.formatDate(match.startedAt)

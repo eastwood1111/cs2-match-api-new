@@ -1,5 +1,6 @@
 function buildSummary(items) {
   const total = items.length
+  const statItems = items.filter((item) => item.result === 'win' || item.result === 'loss' || item.result === 'draw')
   if (total === 0) {
     return {
       total: 0,
@@ -9,13 +10,22 @@ function buildSummary(items) {
     }
   }
 
-  const wins = items.filter((item) => item.result === 'win').length
-  const kd = items.reduce((sum, item) => sum + item.kills / Math.max(item.deaths, 1), 0) / total
-  const adr = items.reduce((sum, item) => sum + item.adr, 0) / total
+  if (statItems.length === 0) {
+    return {
+      total,
+      winRate: '0%',
+      avgKd: '0.00',
+      avgAdr: '0'
+    }
+  }
+
+  const wins = statItems.filter((item) => item.result === 'win').length
+  const kd = statItems.reduce((sum, item) => sum + item.kills / Math.max(item.deaths, 1), 0) / statItems.length
+  const adr = statItems.reduce((sum, item) => sum + item.adr, 0) / statItems.length
 
   return {
     total,
-    winRate: `${Math.round((wins / total) * 100)}%`,
+    winRate: `${Math.round((wins / statItems.length) * 100)}%`,
     avgKd: kd.toFixed(2),
     avgAdr: `${Math.round(adr)}`
   }

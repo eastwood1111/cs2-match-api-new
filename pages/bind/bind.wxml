@@ -23,11 +23,13 @@
     <view class="field">
       <text class="field-label">比赛授权码</text>
       <input class="input" password value="{{matchAuthCode}}" data-field="matchAuthCode" bindinput="onInput" placeholder="可稍后补充" />
+      <text class="field-hint">真实 Steam 同步必填，对应 steamidkey。</text>
     </view>
 
     <view class="field">
       <text class="field-label">最近比赛分享码</text>
       <input class="input" value="{{knownCode}}" data-field="knownCode" bindinput="onInput" placeholder="可稍后补充" />
+      <text class="field-hint">真实 Steam 同步必填，填你当前最新一场 CSGO-... 分享码。</text>
     </view>
   </view>
 

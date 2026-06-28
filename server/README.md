@@ -21,6 +21,16 @@ curl http://127.0.0.1:3000/health
 
 生产环境默认关闭测试比赛生成。需要演示 mock 数据时设置 `ENABLE_MOCK_SYNC=true`。
 
+真实 Steam 同步需要用户绑定：
+
+```text
+steamId64
+steamidkey
+knowncode
+```
+
+服务会调用 `ICSGOPlayers_730/GetNextMatchSharingCode`，同步真实比赛分享码。完整 K/D、ADR、玩家列表需要后续 demo 解析。
+
 ## 微信云托管
 
 云托管服务名建议使用：

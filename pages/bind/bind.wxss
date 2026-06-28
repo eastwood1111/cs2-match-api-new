@@ -38,6 +38,13 @@
   font-size: 24rpx;
 }
 
+.field-hint {
+  display: block;
+  margin-top: 8rpx;
+  color: #747b86;
+  font-size: 22rpx;
+}
+
 .notice {
   margin-top: 22rpx;
   padding: 20rpx 22rpx;

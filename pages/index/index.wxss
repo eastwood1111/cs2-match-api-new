@@ -207,6 +207,11 @@
   font-weight: 800;
 }
 
+.steam-source-label {
+  color: #0f5d40;
+  background: #ecf8f3;
+}
+
 .score {
   color: #17191c;
   font-size: 34rpx;
