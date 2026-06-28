@@ -152,7 +152,7 @@ Page({
       await this.loadDashboard(false)
     } catch (error) {
       this.safeSetData({
-        error: error.message || '同步失败'
+        error: error.message ? `同步失败：${error.message}` : '同步失败'
       })
     } finally {
       this.safeSetData({ syncing: false })

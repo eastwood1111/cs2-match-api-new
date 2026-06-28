@@ -16,6 +16,17 @@ async function syncSteamShareCodes(store, userId, account, options = {}) {
     }
   }
 
+  if (!/^CSGO(-[A-Z0-9]+){5}$/i.test(knownCode)) {
+    return {
+      needsCredentials: true,
+      missingFields: ['最近比赛分享码 knowncode'],
+      inserted: 0,
+      fetched: 0,
+      latestKnownCode: knownCode || '',
+      message: '最近比赛分享码格式不正确，需要 CSGO-xxxxx-xxxxx-xxxxx-xxxxx-xxxxx'
+    }
+  }
+
   const shareCodes = []
   for (let index = 0; index < limit; index += 1) {
     const nextCode = await getNextMatchSharingCode({
@@ -84,11 +95,11 @@ async function getNextMatchSharingCode({ steamId64, steamIdKey, knownCode, apiKe
     try {
       payload = text ? JSON.parse(text) : {}
     } catch (error) {
-      throw new Error(`Steam 返回了非 JSON 响应：${text.slice(0, 120)}`)
+      throw publicError(`Steam 返回了非 JSON 响应，通常是参数错误或 Steam 暂时拒绝请求：${text.slice(0, 120)}`)
     }
 
     if (!response.ok) {
-      throw new Error(extractSteamError(payload) || `Steam 接口请求失败：${response.status}`)
+      throw publicError(extractSteamError(payload) || `Steam 接口请求失败：${response.status}`)
     }
 
     const nextCode = payload.result && payload.result.nextcode
@@ -100,12 +111,19 @@ async function getNextMatchSharingCode({ steamId64, steamIdKey, knownCode, apiKe
     return typeof nextCode === 'string' ? nextCode.trim() : ''
   } catch (error) {
     if (error.name === 'AbortError') {
-      throw new Error('Steam 接口超时，请稍后重试')
+      throw publicError('Steam 接口超时，请稍后重试')
     }
     throw error
   } finally {
     clearTimeout(timer)
   }
+}
+
+function publicError(message, statusCode = 400) {
+  const error = new Error(message)
+  error.publicMessage = message
+  error.statusCode = statusCode
+  return error
 }
 
 function extractSteamError(payload) {

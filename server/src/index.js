@@ -109,10 +109,23 @@ async function main() {
     }
 
     const privateAccount = await store.getPrivateSteamAccount(req.currentUser.id)
-    const result = await syncSteamShareCodes(store, req.currentUser.id, privateAccount, {
-      limit: req.body.limit || 10,
-      apiKey: config.steam.apiKey
-    })
+    let result
+    try {
+      result = await syncSteamShareCodes(store, req.currentUser.id, privateAccount, {
+        limit: req.body.limit || 10,
+        apiKey: config.steam.apiKey
+      })
+    } catch (error) {
+      console.error('Steam sync failed', {
+        userId: req.currentUser.id,
+        steamId64: privateAccount && privateAccount.steamId64,
+        message: error.message
+      })
+      res.status(error.statusCode || 400).json({
+        message: error.publicMessage || error.message || 'Steam 同步失败'
+      })
+      return
+    }
 
     if (result.needsCredentials) {
       res.status(400).json({
